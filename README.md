@@ -15,6 +15,13 @@
 - 速度滑条，范围 `1-15`，默认 `7`
 - 三分区键盘灯同步设置
 
+## 下载
+
+- 最新 Release：<https://github.com/smkw33d/Colorful-Keyborad-Led-Color-Setting/releases/latest/download/colorful-keyboard.zip>
+- GitHub Actions 构建记录：<https://github.com/smkw33d/Colorful-Keyborad-Led-Color-Setting/actions/workflows/build.yml>
+
+Release 压缩包包含 `colorful-keyboard.exe`、配置文件、README 和 LICENSE，不包含 `InsydeDCHU.dll`。
+
 ## 使用
 
 1. 编译或下载程序。
@@ -58,6 +65,15 @@ Debug：
 
 - `ColorfulLedKeyboardSet\bin\Release\colorful-keyboard.exe`
 - `ColorfulLedKeyboardSet\bin\Debug\colorful-keyboard.exe`
+
+## 发布
+
+推送 `v*` tag 会自动构建 Release 并上传 `colorful-keyboard.zip`：
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## 注意
 

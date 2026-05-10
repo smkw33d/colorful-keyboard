@@ -269,6 +269,13 @@ namespace ColorfulLedKeyboardSet
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            notifyIcon1.Icon = Icon;
+            if (notifyIcon1.Icon == null)
+            {
+                notifyIcon1.Icon = SystemIcons.Application;
+            }
+            notifyIcon1.Visible = true;
+
             if (!File.Exists(Application.StartupPath + "\\InsydeDCHU.dll"))
             {
                 MessageBox.Show("发生错误:InsydeDCHU.dll缺失\r\n，请检查程序运行文件夹下是否有InsydeDCHU.dll", "发生错误");
@@ -298,8 +305,47 @@ namespace ColorfulLedKeyboardSet
             _speedLevel = speedBar.Value;
         }
 
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            if (WindowState == FormWindowState.Minimized)
+            {
+                HideToTray();
+            }
+        }
+
+        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        {
+            RestoreFromTray();
+        }
+
+        private void showToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            RestoreFromTray();
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        private void HideToTray()
+        {
+            Hide();
+            ShowInTaskbar = false;
+            notifyIcon1.Visible = true;
+        }
+
+        private void RestoreFromTray()
+        {
+            ShowInTaskbar = true;
+            Show();
+            WindowState = FormWindowState.Normal;
+            Activate();
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            notifyIcon1.Visible = false;
             StopRgbLoop();
             base.OnFormClosing(e);
         }

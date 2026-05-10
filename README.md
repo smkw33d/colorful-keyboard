@@ -1,43 +1,64 @@
-# Colorful Keyborad Led Color Setting
-Colorful Keyborad Led Color Setting  
-My laptop is [COLORFUL 将星x15 at 2022](https://www.colorful.cn/product_show.aspx?mid=158&id=13).  
-<s>也许神舟笔记本也可以使用这个调节键盘灯</s>  
-[English introduction](#english)  
-[中文介绍](#中文)  
-# English  
-This is a software to change Colorful laptop's keyboard Led colorful.  
-+ ## Why I build it?  
-+ I'm a freshman in collage in 2022/9/1.To study in collage I bought this ["COLORFUL"](https://www.colorful.cn/) laptop.All things are right,but this laptop have not RGB loop function.That was why my built it.  
-+ ## How to build it?  
-+ First of all,I used dnspy to check LedKeyboardSetting.exe source code and debug it.  
-+ <s> By the way,what a unuseless code in LedKeyboardSetting. </s>  
-+ Secondly through my reverse I finded InsydeDCHU.dll that is the key to setting LED color.  
-+ And then I use ida to find this  
-+ `__int64 __fastcall SetDCHU_Data(int a1, __int64 a2, int a3)`  
-+ I confirm this can set color to LED.At the last I use C# to make my Colorful Keyborad Led Color Setting.  
-+ <s> Everythings are easy. </s>  
-+  ## How to use it?  
-+  1.Confirm "InsydeDCHU.dll" and my software in same path  
-+  2.Accept disclaimers  
-+  3.Software UI are Chinese google translate can help you :D  
-+  ![](https://github.com/moshuiD/Colorful-Keyborad-Led-Color-Setting/blob/main/ui.png)  
-+  ## Disclaimers  
-+  1.Powered by moshui.
-+  2.If have any hardware damage.I have not any duty to pay for it.  
+# colorful-keyboard
 
-# 中文  
-此程序可以修改七彩虹笔记本键盘灯颜色  
-+ ## 为什么制作它？
-+ 我在2022年9月1日会成为大一新生。为了学习买了这个[七彩虹](https://www.colorful.cn/)笔记本.这个笔记本一切都很让我满意，就是这个键盘灯他没有RGB循环和自定义颜色功能。为了弥补这个，我写了此程序  
-+ ## 怎么制作的？  
-+ 首先使用dnspy查看源代码和调试  
-+ <s> 顺便说一下，他这个无用的代码真的多 </s>  
-+ 然后通过我的逆向我发现了InsydeDCHU.dll这个dll  
-+ 接着使用ida发现这个函数  
-+ ` __int64 __fastcall SetDCHU_Data(int a1, __int64 a2, int a3)`  
-+ 我确定这个能设置键盘灯颜色，然后使用C#编写程序  
-+ ## 怎么使用？
-+ 1.确保InsydeDCHU.dll与本程序位于同一个文件夹
-+ 2.接受免责声明
-+ ## 程序截图  
-+ ![](https://github.com/moshuiD/Colorful-Keyborad-Led-Color-Setting/blob/main/ui.png)
+一个用于七彩虹笔记本键盘灯的 Windows 小工具，支持 RGB 循环和自定义颜色。
+
+本项目基于原项目修改：
+
+- 原作者：moshuiD
+- 原项目：<https://github.com/moshuiD/Colorful-Keyborad-Led-Color-Setting>
+- 许可证：见仓库内 `LICENSE`
+
+## 功能
+
+- RGB 循环灯效
+- 自定义键盘灯颜色
+- 速度滑条，范围 `1-15`，默认 `7`
+- 三分区键盘灯同步设置
+
+## 使用
+
+1. 编译或下载程序。
+2. 将 `InsydeDCHU.dll` 放到程序同一目录。
+3. 运行 `colorful-keyboard.exe`。
+4. 点击 `RGB循环` 开始循环，点击 `停止循环` 停止。
+5. 点击 `自定义RGB` 选择固定颜色。
+
+如果提示 `InsydeDCHU.dll` 缺失，请确认 DLL 和 exe 在同一个目录。
+
+如果提示 DLL 位数不匹配，请使用 64 位版本的 `InsydeDCHU.dll`，并使用当前项目配置重新编译。
+
+## 本版本更改
+
+- 程序名称改为 `colorful-keyboard`。
+- 移除了启动时的免责声明弹窗。
+- 移除了程序界面中的作者信息、关于按钮和源码链接。
+- RGB 循环从无延迟线程循环改为可取消异步循环，降低 CPU 占用。
+- RGB 循环刷新限制为约 25 FPS。
+- 修复速度条调整后 RGB 循环可能停在某个颜色的问题。
+- 速度条范围改为 `1-15`，默认值改为 `7`。
+- 关闭窗口、停止循环、选择自定义颜色时会正确取消后台循环。
+- 关闭 `Prefer 32-bit`，避免与 64 位 `InsydeDCHU.dll` 位数不匹配。
+- 增加 `.gitignore`，忽略 Visual Studio 构建输出。
+
+## 编译
+
+Release：
+
+```powershell
+& 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' ColorfulLedKeyboardSet\ColorfulLedKeyboardSet.sln /t:Build /p:Configuration=Release /p:Platform="Any CPU"
+```
+
+Debug：
+
+```powershell
+& 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' ColorfulLedKeyboardSet\ColorfulLedKeyboardSet.sln /t:Build /p:Configuration=Debug /p:Platform="Any CPU"
+```
+
+编译产物位于：
+
+- `ColorfulLedKeyboardSet\bin\Release\colorful-keyboard.exe`
+- `ColorfulLedKeyboardSet\bin\Debug\colorful-keyboard.exe`
+
+## 注意
+
+该程序通过 `InsydeDCHU.dll` 调用设备接口修改键盘灯。不同机型和 DLL 版本可能不兼容，使用前请自行确认风险。

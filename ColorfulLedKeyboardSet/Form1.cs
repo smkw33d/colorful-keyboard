@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -25,6 +24,7 @@ namespace ColorfulLedKeyboardSet
         private int _red = MaxColorValue;
         private int _green;
         private int _blue;
+        private int _rgbPhase;
 
         public Form1()
         {
@@ -106,38 +106,49 @@ namespace ColorfulLedKeyboardSet
         {
             int step = Math.Max(1, _speedLevel);
 
-            if (!(_green == MaxColorValue && _red == 0 && _blue == MaxColorValue))
+            bool phaseComplete;
+            switch (_rgbPhase)
             {
-                if (_green < MaxColorValue)
-                {
-                    _green = Math.Min(MaxColorValue, _green + step);
-                }
-                else if (_red > 0)
-                {
-                    _red = Math.Max(0, _red - step);
-                }
-                else if (_blue < MaxColorValue)
-                {
-                    _blue = Math.Min(MaxColorValue, _blue + step);
-                }
+                case 0:
+                    phaseComplete = MoveChannelToward(ref _green, MaxColorValue, step);
+                    break;
+                case 1:
+                    phaseComplete = MoveChannelToward(ref _red, 0, step);
+                    break;
+                case 2:
+                    phaseComplete = MoveChannelToward(ref _blue, MaxColorValue, step);
+                    break;
+                case 3:
+                    phaseComplete = MoveChannelToward(ref _green, 0, step);
+                    break;
+                case 4:
+                    phaseComplete = MoveChannelToward(ref _red, MaxColorValue, step);
+                    break;
+                default:
+                    phaseComplete = MoveChannelToward(ref _blue, 0, step);
+                    break;
             }
-            else
+
+            if (phaseComplete)
             {
-                if (_green > 0)
-                {
-                    _green = Math.Max(0, _green - step);
-                }
-                else if (_red < MaxColorValue)
-                {
-                    _red = Math.Min(MaxColorValue, _red + step);
-                }
-                else if (_blue > 0)
-                {
-                    _blue = Math.Max(0, _blue - step);
-                }
+                _rgbPhase = (_rgbPhase + 1) % 6;
             }
 
             return Color.FromArgb(_red, _green, _blue);
+        }
+
+        private static bool MoveChannelToward(ref int channel, int target, int step)
+        {
+            if (channel < target)
+            {
+                channel = Math.Min(target, channel + step);
+            }
+            else if (channel > target)
+            {
+                channel = Math.Max(target, channel - step);
+            }
+
+            return channel == target;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -249,7 +260,11 @@ namespace ColorfulLedKeyboardSet
                 return;
             }
 
-            MessageBox.Show("RGB循环发生错误:\r\n" + ex.Message, "发生错误");
+            string message = ex is BadImageFormatException
+                ? "RGB循环发生错误:\r\nInsydeDCHU.dll 与程序位数不匹配。请使用 x64 版本程序，并确认运行目录中的 InsydeDCHU.dll 也是 64 位版本。\r\n\r\n原始错误: " + ex.Message
+                : "RGB循环发生错误:\r\n" + ex.Message;
+
+            MessageBox.Show(message, "发生错误");
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -260,7 +275,6 @@ namespace ColorfulLedKeyboardSet
                 Environment.Exit(0);
             }
 
-            MessageBox.Show("此程序为墨水制作\r\n利用逆向手段获取API编写而成\r\n有任何硬件问题开发者不承担任何责任！", "免责声明");
             button2.Enabled = false;
         }
 
@@ -274,25 +288,9 @@ namespace ColorfulLedKeyboardSet
             }
         }
 
-        private void information_B_Click(object sender, EventArgs e)
-        {
-            if (MessageBox.Show("你好，我是墨水\r\n这个程序是写给七彩虹笔记本（有可能神舟也可以）用户的\r\n" +
-                 "由于我发现这款电脑虽能设置键盘灯光\r\n但无法RGB循环以及自定义RGB\r\n故诞生了此程序\r\n" +
-                 "使用循环RGB模式可以拖动滑动条调整循环速度\r\n更多信息前往此项目Github仓库查看!\r\n" +
-                 "是否自动打开此程序Github仓库？", "一些信息", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            {
-                Process.Start("https://github.com/moshuiD/Colorful-Keyborad-Led-Color-Setting");
-            }
-        }
-
         private async void button2_Click(object sender, EventArgs e)
         {
             await StopRgbLoopAsync();
-        }
-
-        private void GetSource_L_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            Process.Start("https://github.com/moshuiD/Colorful-Keyborad-Led-Color-Setting");
         }
 
         private void speedBar_ValueChanged(object sender, EventArgs e)

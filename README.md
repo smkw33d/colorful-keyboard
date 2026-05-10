@@ -17,8 +17,8 @@
 
 ## 下载
 
-- 最新构建：<https://github.com/smkw33d/Colorful-Keyborad-Led-Color-Setting/releases/download/latest/colorful-keyboard.zip>
-- GitHub Actions 构建记录：<https://github.com/smkw33d/Colorful-Keyborad-Led-Color-Setting/actions/workflows/build.yml>
+- 最新构建：<https://github.com/smkw33d/colorful-keyboard/releases/download/latest/colorful-keyboard.zip>
+- GitHub Actions 构建记录：<https://github.com/smkw33d/colorful-keyboard/actions/workflows/build.yml>
 
 Release 压缩包包含 `colorful-keyboard.exe`、配置文件、README 和 LICENSE，不包含 `InsydeDCHU.dll`。
 

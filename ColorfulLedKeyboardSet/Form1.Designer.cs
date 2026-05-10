@@ -13,6 +13,11 @@
         /// <param name="disposing">如果应释放托管资源，为 true；否则为 false。</param>
         protected override void Dispose(bool disposing)
         {
+            if (disposing)
+            {
+                StopRgbLoop();
+            }
+
             if (disposing && (components != null))
             {
                 components.Dispose();
@@ -51,7 +56,7 @@
             // 
             // speedBar
             // 
-            this.speedBar.LargeChange = 7;
+            this.speedBar.LargeChange = 1;
             this.speedBar.Location = new System.Drawing.Point(198, 5);
             this.speedBar.Maximum = 7;
             this.speedBar.Minimum = 1;
@@ -59,6 +64,7 @@
             this.speedBar.Size = new System.Drawing.Size(113, 56);
             this.speedBar.TabIndex = 1;
             this.speedBar.Value = 1;
+            this.speedBar.ValueChanged += new System.EventHandler(this.speedBar_ValueChanged);
             // 
             // CustomRGB_B
             // 

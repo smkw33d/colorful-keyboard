@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -19,16 +14,28 @@ namespace ColorfulLedKeyboardSet
         [DllImport("InsydeDCHU.dll")]
         public static extern int SetDCHU_Data(int command, byte[] buffer, int length);
 
+        private const int FrameDelayMs = 40;
+        private const int MaxColorValue = 255;
+
+        private readonly int[] _keyboardZones = { 1, 2, 3 };
+        private CancellationTokenSource _loopCts;
+        private Task _loopTask;
+        private volatile int _speedLevel;
+
+        private int _red = MaxColorValue;
+        private int _green;
+        private int _blue;
+
         public Form1()
         {
-            CheckForIllegalCrossThreadCalls = false;
             InitializeComponent();
+            _speedLevel = speedBar.Value;
         }
 
-        public void SetColor(int KbPart, Color _color)
+        private void SetKeyboardZoneColor(int keyboardZone, Color color)
         {
             int num = 0;
-            switch (KbPart)
+            switch (keyboardZone)
             {
                 case 1:
                     num = 240;
@@ -46,91 +53,205 @@ namespace ColorfulLedKeyboardSet
                     num = 243;
                     break;
             }
-            uint num2;
-            num2 = (uint)((int)_color.B << 16 | (int)_color.R << 8 | (int)_color.G);
-            if (_color.R == 0 && _color.G == 255 && _color.B == 127)
-            {
-                num2 = (uint)(4587520 | (int)_color.R << 8 | (int)_color.G);
-            }
 
+            uint num2 = (uint)((int)color.B << 16 | (int)color.R << 8 | (int)color.G);
+            if (color.R == 0 && color.G == 255 && color.B == 127)
+            {
+                num2 = (uint)(4587520 | (int)color.R << 8 | (int)color.G);
+            }
 
             byte[] bytes = BitConverter.GetBytes((long)((long)num << 24) + (long)((ulong)num2));
             SetDCHU_Data(103, bytes, 4);
-            ColorTestLabel.ForeColor = _color;
         }
-        int r = 255;
-        int g = 0;
-        int b = 0;
-        Thread LoopThread;
-        private void RGBLoop()
+
+        private void ApplyColorToAllZones(Color color)
+        {
+            foreach (int keyboardZone in _keyboardZones)
+            {
+                SetKeyboardZoneColor(keyboardZone, color);
+            }
+        }
+
+        private void UpdateColorPreview(Color color)
+        {
+            if (IsDisposed || !IsHandleCreated)
+            {
+                return;
+            }
+
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action<Color>(UpdateColorPreview), color);
+                return;
+            }
+
+            ColorTestLabel.ForeColor = color;
+        }
+
+        private async Task RunRgbLoopAsync(CancellationToken token)
         {
             while (true)
             {
-                if (!(g == 255 && r == 0 && b == 255))
+                token.ThrowIfCancellationRequested();
+
+                Color color = GetNextRgbColor();
+                ApplyColorToAllZones(color);
+                UpdateColorPreview(color);
+
+                await Task.Delay(FrameDelayMs, token).ConfigureAwait(false);
+            }
+        }
+
+        private Color GetNextRgbColor()
+        {
+            int step = Math.Max(1, _speedLevel);
+
+            if (!(_green == MaxColorValue && _red == 0 && _blue == MaxColorValue))
+            {
+                if (_green < MaxColorValue)
                 {
-                    for (; g < 255; g += speedBar.Value)
-                    {
-
-                        SetColor(1, Color.FromArgb(r, g, b));
-                        SetColor(2, Color.FromArgb(r, g, b));
-                        SetColor(3, Color.FromArgb(r, g, b));
-                    }
-                    g = g > 255 ? g = 255 : g;
-                    for (; r > 0; r -= speedBar.Value)
-                    {
-
-                        SetColor(1, Color.FromArgb(r, g, b));
-                        SetColor(2, Color.FromArgb(r, g, b));
-                        SetColor(3, Color.FromArgb(r, g, b));
-                    }
-                    r = r < 0 ? r = 0 : r;
-                    for (; b < 255; b += speedBar.Value)
-                    {
-
-                        SetColor(1, Color.FromArgb(r, g, b));
-                        SetColor(2, Color.FromArgb(r, g, b));
-                        SetColor(3, Color.FromArgb(r, g, b));
-                    }
-                    b = b > 255 ? b = 255 : b;
+                    _green = Math.Min(MaxColorValue, _green + step);
                 }
-                else
+                else if (_red > 0)
                 {
-                    for (; g > 0; g -= speedBar.Value)
-                    {
+                    _red = Math.Max(0, _red - step);
+                }
+                else if (_blue < MaxColorValue)
+                {
+                    _blue = Math.Min(MaxColorValue, _blue + step);
+                }
+            }
+            else
+            {
+                if (_green > 0)
+                {
+                    _green = Math.Max(0, _green - step);
+                }
+                else if (_red < MaxColorValue)
+                {
+                    _red = Math.Min(MaxColorValue, _red + step);
+                }
+                else if (_blue > 0)
+                {
+                    _blue = Math.Max(0, _blue - step);
+                }
+            }
 
-                        SetColor(1, Color.FromArgb(r, g, b));
-                        SetColor(2, Color.FromArgb(r, g, b));
-                        SetColor(3, Color.FromArgb(r, g, b));
-                    }
-                    g = g < 0 ? g = 0 : g;
-                    for (; r < 255; r += speedBar.Value)
-                    {
+            return Color.FromArgb(_red, _green, _blue);
+        }
 
-                        SetColor(1, Color.FromArgb(r, g, b));
-                        SetColor(2, Color.FromArgb(r, g, b));
-                        SetColor(3, Color.FromArgb(r, g, b));
-                    }
-                    r = r > 255 ? r = 255 : r;
-                    for (; b > 0; b -= speedBar.Value)
-                    {
+        private void button1_Click(object sender, EventArgs e)
+        {
+            StartRgbLoop();
+        }
 
-                        SetColor(1, Color.FromArgb(r, g, b));
-                        SetColor(2, Color.FromArgb(r, g, b));
-                        SetColor(3, Color.FromArgb(r, g, b));
-                    }
-                    b = b < 0 ? b = 0 : b;
+        private void StartRgbLoop()
+        {
+            if (_loopTask != null && !_loopTask.IsCompleted)
+            {
+                return;
+            }
+
+            _loopCts = new CancellationTokenSource();
+            CancellationToken token = _loopCts.Token;
+            _loopTask = Task.Run(() => RunRgbLoopAsync(token), token);
+
+            SetLoopButtons(true);
+            ObserveRgbLoopCompletionAsync(_loopTask, _loopCts);
+        }
+
+        private async void ObserveRgbLoopCompletionAsync(Task loopTask, CancellationTokenSource loopCts)
+        {
+            try
+            {
+                await loopTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                ShowLoopError(ex);
+            }
+            finally
+            {
+                loopCts.Dispose();
+
+                if (ReferenceEquals(loopTask, _loopTask))
+                {
+                    _loopTask = null;
+                    _loopCts = null;
+                    SetLoopButtons(false);
                 }
             }
         }
-     
-        private void button1_Click(object sender, EventArgs e)
+
+        private void StopRgbLoop()
         {
-            LoopThread = new Thread(new ThreadStart(() => this.RGBLoop()));
-            LoopThread.IsBackground = true;
-            LoopThread.Start();
-            button1.Enabled = false;
-            button2.Enabled = true;
+            CancellationTokenSource loopCts = _loopCts;
+            if (loopCts != null && !loopCts.IsCancellationRequested)
+            {
+                loopCts.Cancel();
+            }
+
+            SetLoopButtons(false);
         }
+
+        private async Task StopRgbLoopAsync()
+        {
+            Task loopTask = _loopTask;
+            StopRgbLoop();
+
+            if (loopTask == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await loopTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void SetLoopButtons(bool isRunning)
+        {
+            if (IsDisposed || !IsHandleCreated)
+            {
+                return;
+            }
+
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action<bool>(SetLoopButtons), isRunning);
+                return;
+            }
+
+            button1.Enabled = !isRunning;
+            button2.Enabled = isRunning;
+        }
+
+        private void ShowLoopError(Exception ex)
+        {
+            if (IsDisposed || !IsHandleCreated)
+            {
+                return;
+            }
+
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action<Exception>(ShowLoopError), ex);
+                return;
+            }
+
+            MessageBox.Show("RGB循环发生错误:\r\n" + ex.Message, "发生错误");
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             if (!File.Exists(Application.StartupPath + "\\InsydeDCHU.dll"))
@@ -138,21 +259,18 @@ namespace ColorfulLedKeyboardSet
                 MessageBox.Show("发生错误:InsydeDCHU.dll缺失\r\n，请检查程序运行文件夹下是否有InsydeDCHU.dll", "发生错误");
                 Environment.Exit(0);
             }
+
             MessageBox.Show("此程序为墨水制作\r\n利用逆向手段获取API编写而成\r\n有任何硬件问题开发者不承担任何责任！", "免责声明");
             button2.Enabled = false;
         }
 
-        private void CustomRGB_B_Click(object sender, EventArgs e)
+        private async void CustomRGB_B_Click(object sender, EventArgs e)
         {
-            if(LoopThread!=null)
-            LoopThread.Abort();
-            button1.Enabled = true;
-            button2.Enabled = false;
+            await StopRgbLoopAsync();
             if (colorDialog1.ShowDialog() == DialogResult.OK)
             {
-                SetColor(1, colorDialog1.Color);
-                SetColor(2, colorDialog1.Color);
-                SetColor(3, colorDialog1.Color);
+                ApplyColorToAllZones(colorDialog1.Color);
+                UpdateColorPreview(colorDialog1.Color);
             }
         }
 
@@ -167,16 +285,25 @@ namespace ColorfulLedKeyboardSet
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private async void button2_Click(object sender, EventArgs e)
         {
-            LoopThread.Abort();
-            button1.Enabled = true;
-            button2.Enabled = false;
+            await StopRgbLoopAsync();
         }
 
         private void GetSource_L_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             Process.Start("https://github.com/moshuiD/Colorful-Keyborad-Led-Color-Setting");
+        }
+
+        private void speedBar_ValueChanged(object sender, EventArgs e)
+        {
+            _speedLevel = speedBar.Value;
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            StopRgbLoop();
+            base.OnFormClosing(e);
         }
     }
 }

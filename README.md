@@ -32,6 +32,14 @@ Release 压缩包包含 `colorful-keyboard.exe`、配置文件、README 和 LICE
 
 如果提示 `InsydeDCHU.dll` 缺失，请确认 DLL 和 exe 在同一个目录。
 
+在已安装官方热键/OSD 组件的机器上，`InsydeDCHU.dll` 常见位置如下，版本号可能不同：
+
+```text
+C:\Program Files\WindowsApps\CLEVOCO.FnhotkeysandOSD_XXX_x64__XXX\FnKey\InsydeDCHU.dll
+```
+
+本项目不提供、不打包、不再分发该 DLL；这里只提示本机已安装组件中的常见查找路径。
+
 如果提示 DLL 位数不匹配，请使用 64 位版本的 `InsydeDCHU.dll`，并使用当前项目配置重新编译。
 
 ## 本版本更改
